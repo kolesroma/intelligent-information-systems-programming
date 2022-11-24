@@ -2,21 +2,21 @@ import chess
 import chess.engine
 import random
 
-board = chess.Board()
+brd = chess.Board()
 
 
 def last_move_player():
     moves = []
-    for c in board.legal_moves:
+    for c in brd.legal_moves:
         moves.append(str(c))
-    board.push_san(moves[-1])
+    brd.push_san(moves[-1])
 
 
 def random_move_player():
     moves = []
-    for c in board.legal_moves:
+    for c in brd.legal_moves:
         moves.append(str(c))
-    board.push_san(moves[random.randint(0, len(moves) - 1)])
+    brd.push_san(moves[random.randint(0, len(moves) - 1)])
 
 
 engine = chess.engine.SimpleEngine.popen_uci("/usr/games/stockfish")
@@ -42,20 +42,20 @@ def evaluate_position(board) -> float:
     ) + 0.001 * random.random()
 
 
-def negamax_move_player():
+def negamax_move_player(brd):
     moves = []
-    for c in board.legal_moves:
+    for c in brd.legal_moves:
         moves.append(str(c))
 
     values = []
     for move in moves:
-        copy_board = board.copy()
+        copy_board = brd.copy()
         copy_board.push_san(move)
-        value = nega_max(copy_board, 3, True)
+        value = nega_max(copy_board, 1, True)
         values.append(value)
 
     index = values.index(max(values))
-    board.push_san(moves[index])
+    brd.push_san(moves[index])
 
 
 def nega_max(board, depth, is_maximizer):  # let black is maximizer
@@ -75,20 +75,45 @@ def nega_max(board, depth, is_maximizer):  # let black is maximizer
     return max
 
 
-def negascout_move_player():
+def monte_carlo_move_player():
     moves = []
-    for c in board.legal_moves:
+    for c in brd.legal_moves:
         moves.append(str(c))
 
     values = []
     for move in moves:
-        copy_board = board.copy()
+        copy_board = brd.copy()
+        copy_board.push_san(move)
+        value = monte_carlo(copy_board)
+        values.append(value)
+
+    index = values.index(max(values))
+    brd.push_san(moves[index])
+
+
+def monte_carlo(board):
+    def simulate_times(moves):
+        for i in range(moves):
+            negamax_move_player(board)
+
+    simulate_times(2)
+    return evaluate_position(board)
+
+
+def negascout_move_player():
+    moves = []
+    for c in brd.legal_moves:
+        moves.append(str(c))
+
+    values = []
+    for move in moves:
+        copy_board = brd.copy()
         copy_board.push_san(move)
         value = nega_scout(copy_board, 3, 1, 3)
         values.append(value)
 
     index = values.index(max(values))
-    board.push_san(moves[index])
+    brd.push_san(moves[index])
 
 
 def nega_scout(board, depth, alpha, beta):
@@ -111,18 +136,18 @@ def nega_scout(board, depth, alpha, beta):
 
 def pvs_move_player():
     moves = []
-    for c in board.legal_moves:
+    for c in brd.legal_moves:
         moves.append(str(c))
 
     values = []
     for move in moves:
-        copy_board = board.copy()
+        copy_board = brd.copy()
         copy_board.push_san(move)
         value = pvs(copy_board, 3, 1, 3)
         values.append(value)
 
     index = values.index(max(values))
-    board.push_san(moves[index])
+    brd.push_san(moves[index])
 
 
 def pvs(board, depth, alpha, beta):
@@ -146,17 +171,18 @@ def pvs(board, depth, alpha, beta):
 while True:
     # white player
     random_move_player()
-    print(board)
+    print(brd)
 
     # black player
-    negamax_move_player()
+    # negamax_move_player(board)
     # negascout_move_player()
     # pvs_move_player()
+    monte_carlo_move_player()
 
     print("~")
     print("~")
     print("~")
-    print(board)
+    print(brd)
 
     command = input("command:")
     if command == "exit":
